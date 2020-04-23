@@ -242,7 +242,8 @@ void pubPointCloud(const Estimator &estimator, const std_msgs::Header &header)
     sensor_msgs::PointCloud point_cloud, loop_point_cloud;
     point_cloud.header = header;
     loop_point_cloud.header = header;
-
+    sensor_msgs::ChannelFloat32 cloud_ids;
+    cloud_ids.name = "id";
 
     for (auto &it_per_id : estimator.f_manager.feature)
     {
@@ -261,13 +262,17 @@ void pubPointCloud(const Estimator &estimator, const std_msgs::Header &header)
         p.y = w_pts_i(1);
         p.z = w_pts_i(2);
         point_cloud.points.push_back(p);
+        cloud_ids.values.push_back(it_per_id.feature_id);
     }
+    point_cloud.channels.push_back(cloud_ids);
     pub_point_cloud.publish(point_cloud);
 
 
     // pub margined potin
     sensor_msgs::PointCloud margin_cloud;
     margin_cloud.header = header;
+    sensor_msgs::ChannelFloat32 margin_cloud_ids;
+    margin_cloud_ids.name = "id";
 
     for (auto &it_per_id : estimator.f_manager.feature)
     { 
@@ -290,8 +295,10 @@ void pubPointCloud(const Estimator &estimator, const std_msgs::Header &header)
             p.y = w_pts_i(1);
             p.z = w_pts_i(2);
             margin_cloud.points.push_back(p);
+            margin_cloud_ids.values.push_back(it_per_id.feature_id);
         }
     }
+    margin_cloud.channels.push_back(margin_cloud_ids);
     pub_margin_cloud.publish(margin_cloud);
 }
 
