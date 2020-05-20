@@ -28,14 +28,6 @@ void reduceVector(vector<int> &v, vector<uchar> status)
     v.resize(j);
 }
 
-void reduceVector(vector<double> &v, vector<uchar> status)
-{
-    int j = 0;
-    for (int i = 0; i < int(v.size()); i++)
-        if (status[i])
-            v[j++] = v[i];
-    v.resize(j);
-}
 
 FeatureTracker::FeatureTracker()
 {
@@ -50,12 +42,12 @@ void FeatureTracker::setMask()
     
 
     // prefer to keep features that are tracked for long time
-    vector<pair<int, pair<cv::Point2f, pair<int, double>>>> cnt_pts_id;
+    vector<pair<int, pair<cv::Point2f, int>>> cnt_pts_id;
 
     for (unsigned int i = 0; i < forw_pts.size(); i++)
-        cnt_pts_id.push_back(make_pair(track_cnt[i], make_pair(forw_pts[i], make_pair(ids[i], detected_time[i]))));
+        cnt_pts_id.push_back(make_pair(track_cnt[i], make_pair(forw_pts[i], ids[i])));
 
-    sort(cnt_pts_id.begin(), cnt_pts_id.end(), [](const pair<int, pair<cv::Point2f, pair<int, double>>> &a, const pair<int, pair<cv::Point2f, pair<int, double>>> &b)
+    sort(cnt_pts_id.begin(), cnt_pts_id.end(), [](const pair<int, pair<cv::Point2f, int>> &a, const pair<int, pair<cv::Point2f, int>> &b)
          {
             return a.first > b.first;
          });
@@ -63,15 +55,13 @@ void FeatureTracker::setMask()
     forw_pts.clear();
     ids.clear();
     track_cnt.clear();
-    detected_time.clear();
 
     for (auto &it : cnt_pts_id)
     {
         if (mask.at<uchar>(it.second.first) == 255)
         {
             forw_pts.push_back(it.second.first);
-            ids.push_back(it.second.second.first);
-            detected_time.push_back(it.second.second.second);
+            ids.push_back(it.second.second);
             track_cnt.push_back(it.first);
             cv::circle(mask, it.second.first, MIN_DIST, 0, -1);
         }
@@ -85,7 +75,6 @@ void FeatureTracker::addPoints()
         forw_pts.push_back(p);
         ids.push_back(-1);
         track_cnt.push_back(1);
-        detected_time.push_back(cur_time);
     }
 }
 
@@ -132,7 +121,6 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
         reduceVector(ids, status);
         reduceVector(cur_un_pts, status);
         reduceVector(track_cnt, status);
-        reduceVector(detected_time, status);
         ROS_DEBUG("temporal optical flow costs: %fms", t_o.toc());
     }
 
@@ -208,7 +196,6 @@ void FeatureTracker::rejectWithF()
         reduceVector(cur_un_pts, status);
         reduceVector(ids, status);
         reduceVector(track_cnt, status);
-        reduceVector(detected_time, status);
         ROS_DEBUG("FM ransac: %d -> %lu: %f", size_a, forw_pts.size(), 1.0 * forw_pts.size() / size_a);
         ROS_DEBUG("FM ransac costs: %fms", t_f.toc());
     }
