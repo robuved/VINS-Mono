@@ -240,6 +240,8 @@ void pubCameraPose(const Estimator &estimator, const std_msgs::Header &header)
 void pubPointCloud(const Estimator &estimator, const std_msgs::Header &header)
 {
     sensor_msgs::PointCloud point_cloud, loop_point_cloud;
+    sensor_msgs::ChannelFloat32 ids, ids_margin;
+
     point_cloud.header = header;
     loop_point_cloud.header = header;
 
@@ -261,9 +263,11 @@ void pubPointCloud(const Estimator &estimator, const std_msgs::Header &header)
         p.y = w_pts_i(1);
         p.z = w_pts_i(2);
         point_cloud.points.push_back(p);
+        ids.values.push_back(it_per_id.feature_id);
     }
+    point_cloud.channels.push_back(ids);
     pub_point_cloud.publish(point_cloud);
-
+    
 
     // pub margined potin
     sensor_msgs::PointCloud margin_cloud;
@@ -290,8 +294,10 @@ void pubPointCloud(const Estimator &estimator, const std_msgs::Header &header)
             p.y = w_pts_i(1);
             p.z = w_pts_i(2);
             margin_cloud.points.push_back(p);
+            ids_margin.values.push_back(it_per_id.feature_id);
         }
     }
+    margin_cloud.channels.push_back(ids_margin);
     pub_margin_cloud.publish(margin_cloud);
 }
 
@@ -395,6 +401,7 @@ void pubKeyframe(const Estimator &estimator)
                 p_2d.values.push_back(it_per_id.feature_per_frame[imu_j].uv.x());
                 p_2d.values.push_back(it_per_id.feature_per_frame[imu_j].uv.y());
                 p_2d.values.push_back(it_per_id.feature_id);
+                p_2d.values.push_back(it_per_id.detected_time);
                 point_cloud.channels.push_back(p_2d);
             }
 
